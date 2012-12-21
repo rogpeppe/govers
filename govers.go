@@ -208,7 +208,7 @@ func (ctxt *context) fixPath(p string) string {
 	return p
 }
 
-const versPat = `/v([0-9.)]+`
+const versPat = `/v[0-9.]+`
 
 // pathPat returns a pattern that will match any
 // package path that's the same except possibly
@@ -218,9 +218,14 @@ func pathPat(p string) *regexp.Regexp {
 	if !versRe.MatchString(p) {
 		fatalf("%q is not versioned", p)
 	}
+	// Use an intermediate step so that we can use QuoteMeta after
+	// matching against versPat.  (versPat won't match quoted
+	// metacharacters).
+	// Note that  '#' is an invalid character in an import path
+	p = versRe.ReplaceAllString(p, "#")
 	p = regexp.QuoteMeta(p)
 	// BUG doesn't match "foo/v0/v1/bar", but do we care?
-	p = "^(" + versRe.ReplaceAllString(p, versPat) + ")(/|$)"
+	p = "^(" + strings.Replace(p, "#", versPat, -1) + ")(/|$)"
 	return regexp.MustCompile(p)
 }
 
