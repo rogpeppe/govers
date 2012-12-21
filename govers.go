@@ -1,3 +1,17 @@
+// The govers command edits all packages
+// below the current directory to use the
+// given package path prefix. As with gofmt
+// and gofix, there is no backup - you are expected
+// to be using a version control system.
+//
+// A versioned package path is defined to be any
+// path containing an element that matches the regular
+// expression "v[0-9.]+".
+//
+// Any import that has the given prefix will be changed.
+//
+// The govers command will also check that all dependencies
+// use the same version; if they do not, it will fail and do nothing.
 package main
 
 import (
@@ -110,6 +124,8 @@ func (ctxt *context) walkDir(path string) {
 	ctxt.editPkgs[pkg.ImportPath] = &ep
 }
 
+// checkPackage checks all go files in the given
+// package, and all their dependencies.
 func (ctxt *context) checkPackage(path string) {
 	if path == "C" {
 		return
@@ -146,6 +162,8 @@ var printConfig = printer.Config{
 	Tabwidth: 8,
 }
 
+// changeVersion changes the named go file to
+// import the new version.
 func (ctxt *context) changeVersion(path string) bool {
 	fset := token.NewFileSet()
 	f, err := parser.ParseFile(fset, path, nil, parser.ParseComments)
@@ -193,8 +211,11 @@ func (ctxt *context) fixPath(p string) string {
 	return p
 }
 
-const versPat = "/v[0-9]+"
+const versPat = `/v([0-9.)]+`
 
+// pathPat returns a pattern that will match any
+// package path that's the same except possibly
+// the version number.
 func pathPat(p string) *regexp.Regexp {
 	versRe := regexp.MustCompile(versPat + "(/|$)")
 	if !versRe.MatchString(p) {
