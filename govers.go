@@ -1,14 +1,16 @@
-// The govers command edits all packages below the current directory to
-// use the given package path prefix.  As with gofmt and gofix, there is
-// no backup - you are expected to be using a version control system.
-//
-// A versioned package path is defined to be any path containing an
-// element that matches the regular expression "v[0-9.]+".
-//
-// Any import that has the given prefix will be changed.
-//
-// The govers command will also check that all dependencies use the same
-// version; if they do not, it will fail and do nothing.
+/*
+The govers command edits all packages below the current directory to
+use the given package path prefix.  As with gofmt and gofix, there is
+no backup - you are expected to be using a version control system.
+
+A versioned package path is defined to be any path containing an
+element that matches the regular expression "v[0-9.]+".
+
+Any import that has the given prefix will be changed.
+
+The govers command will also check that all dependencies use the same
+version; if they do not, it will fail and do nothing.
+*/
 package main
 
 import (
