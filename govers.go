@@ -36,20 +36,20 @@ func main() {
 	// at the moment.
 	//	buildCtxt.UseAllFiles = true
 	ctxt := &context{
-		cwd:             cwd,
-		fixPackage:      flag.Arg(0),
-		fixPackageCanon: canonicalPath(flag.Arg(0)),
-		buildCtxt:       &buildCtxt,
-		checked:         make(map[string]bool),
-		editPkgs:        make(map[string]*editPkg),
+		cwd:           cwd,
+		fixPackage:    flag.Arg(0),
+		fixPackagePat: pathPat(flag.Arg(0)),
+		buildCtxt:     &buildCtxt,
+		checked:       make(map[string]bool),
+		editPkgs:      make(map[string]*editPkg),
 	}
 	ctxt.walkDir(cwd)
 	for path := range ctxt.editPkgs {
 		ctxt.checkPackage(path)
 	}
-	//	if ctxt.failed {
-	//		os.Exit(1)
-	//	}
+	if ctxt.failed {
+		os.Exit(1)
+	}
 	for path, ep := range ctxt.editPkgs {
 		if !ep.needsEdit {
 			continue
@@ -73,13 +73,13 @@ type editPkg struct {
 }
 
 type context struct {
-	cwd             string
-	failed          bool
-	fixPackage      string
-	fixPackageCanon string
-	buildCtxt       *build.Context
-	checked         map[string]bool
-	editPkgs        map[string]*editPkg
+	cwd           string
+	failed        bool
+	fixPackage    string
+	fixPackagePat *regexp.Regexp
+	buildCtxt     *build.Context
+	checked       map[string]bool
+	editPkgs      map[string]*editPkg
 }
 
 // walkDir walks all directories below path and
@@ -111,6 +111,9 @@ func (ctxt *context) walkDir(path string) {
 }
 
 func (ctxt *context) checkPackage(path string) {
+	if path == "C" {
+		return
+	}
 	if ctxt.checked[path] {
 		// The package has already been, is or being, checked
 		return
@@ -123,21 +126,16 @@ func (ctxt *context) checkPackage(path string) {
 		}
 		return
 	}
+	ep := ctxt.editPkgs[path]
 	for _, impPath := range pkg.Imports {
-		if impPath == "C" {
-			continue
-		}
-		if canonicalPath(impPath) == ctxt.fixPackageCanon {
-			if impPath != ctxt.fixPackage {
-				if ep := ctxt.editPkgs[path]; ep != nil {
-					ep.needsEdit = true
-				} else {
-					logf("%q uses %q", path, impPath)
-					ctxt.failed = true
-					continue
-				}
-				impPath = ctxt.fixPackage
+		if p := ctxt.fixPath(impPath); p != impPath {
+			if ep == nil {
+				logf("%q uses %q", path, impPath)
+				ctxt.failed = true
+				continue
 			}
+			ep.needsEdit = true
+			impPath = p
 		}
 		ctxt.checkPackage(impPath)
 	}
@@ -160,8 +158,8 @@ func (ctxt *context) changeVersion(path string) bool {
 		if err != nil {
 			panic(err)
 		}
-		if canonicalPath(impPath) == ctxt.fixPackageCanon {
-			ispec.Path.Value = strconv.Quote(ctxt.fixPackage)
+		if p := ctxt.fixPath(impPath); p != impPath {
+			ispec.Path.Value = strconv.Quote(p)
 			changed = true
 		}
 	}
@@ -183,10 +181,29 @@ func (ctxt *context) changeVersion(path string) bool {
 	return true
 }
 
-var versPat = regexp.MustCompile("/v[0-9]+/")
+func (ctxt *context) fixPath(p string) string {
+	loc := ctxt.fixPackagePat.FindStringSubmatchIndex(p)
+	if loc == nil {
+		return p
+	}
+	i := loc[3]
+	if p[0:i] != ctxt.fixPackage {
+		p = ctxt.fixPackage + p[i:]
+	}
+	return p
+}
 
-func canonicalPath(p string) string {
-	return versPat.ReplaceAllString(p, "0")
+const versPat = "/v[0-9]+"
+
+func pathPat(p string) *regexp.Regexp {
+	versRe := regexp.MustCompile(versPat + "(/|$)")
+	if !versRe.MatchString(p) {
+		fatalf("%q is not versioned", p)
+	}
+	p = regexp.QuoteMeta(p)
+	// BUG doesn't match "foo/v0/v1/bar", but do we care?
+	p = "^(" + versRe.ReplaceAllString(p, versPat) + ")(/|$)"
+	return regexp.MustCompile(p)
 }
 
 func logf(f string, a ...interface{}) {
