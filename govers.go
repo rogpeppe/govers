@@ -29,18 +29,35 @@ import (
 	"strings"
 )
 
+var (
+	match          = flag.String("m", "", "change imports with a matching prefix")
+	noEdit         = flag.Bool("n", false, "don't make any changes; just perform checks")
+	noDependencies = flag.Bool("d", false, "suppress dependency checking")
+)
+
 func main() {
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "usage: govers new-package-path\n")
+		flag.PrintDefaults()
 		os.Exit(2)
 	}
 	flag.Parse()
 	if flag.NArg() != 1 {
 		flag.Usage()
 	}
+	newPackage := flag.Arg(0)
 	cwd, err := os.Getwd()
 	if err != nil {
 		fatalf("cannot get working directory: %v", err)
+	}
+	var oldPackagePat *regexp.Regexp
+	if *match != "" {
+		oldPackagePat, err = regexp.Compile("^" + *match)
+		if err != nil {
+			fatalf("invalid match pattern: %v", err)
+		}
+	} else {
+		oldPackagePat = pathVersionPat(newPackage)
 	}
 	buildCtxt := build.Default
 	// BUG we ignore files that are ignored by the current build context
@@ -50,8 +67,8 @@ func main() {
 	//	buildCtxt.UseAllFiles = true
 	ctxt := &context{
 		cwd:           cwd,
-		fixPackage:    flag.Arg(0),
-		fixPackagePat: pathPat(flag.Arg(0)),
+		newPackage:    newPackage,
+		oldPackagePat: oldPackagePat,
 		buildCtxt:     &buildCtxt,
 		checked:       make(map[string]bool),
 		editPkgs:      make(map[string]*editPkg),
@@ -88,8 +105,8 @@ type editPkg struct {
 type context struct {
 	cwd           string
 	failed        bool
-	fixPackage    string
-	fixPackagePat *regexp.Regexp
+	newPackage    string
+	oldPackagePat *regexp.Regexp
 	buildCtxt     *build.Context
 	checked       map[string]bool
 	editPkgs      map[string]*editPkg
@@ -152,7 +169,9 @@ func (ctxt *context) checkPackage(path string) {
 			ep.needsEdit = true
 			impPath = p
 		}
-		ctxt.checkPackage(impPath)
+		if !*noDependencies {
+			ctxt.checkPackage(impPath)
+		}
 	}
 }
 
@@ -180,8 +199,8 @@ func (ctxt *context) changeVersion(path string) bool {
 			changed = true
 		}
 	}
-	if !changed {
-		return false
+	if !changed || !*noEdit {
+		return changed
 	}
 	out, err := os.Create(path)
 	if err != nil {
@@ -199,23 +218,23 @@ func (ctxt *context) changeVersion(path string) bool {
 }
 
 func (ctxt *context) fixPath(p string) string {
-	loc := ctxt.fixPackagePat.FindStringSubmatchIndex(p)
+	loc := ctxt.oldPackagePat.FindStringSubmatchIndex(p)
 	if loc == nil {
 		return p
 	}
 	i := loc[3]
-	if p[0:i] != ctxt.fixPackage {
-		p = ctxt.fixPackage + p[i:]
+	if p[0:i] != ctxt.newPackage {
+		p = ctxt.newPackage + p[i:]
 	}
 	return p
 }
 
 const versPat = `/v[0-9.]+`
 
-// pathPat returns a pattern that will match any
+// pathVersionPat returns a pattern that will match any
 // package path that's the same except possibly
 // the version number.
-func pathPat(p string) *regexp.Regexp {
+func pathVersionPat(p string) *regexp.Regexp {
 	versRe := regexp.MustCompile(versPat + "(/|$)")
 	if !versRe.MatchString(p) {
 		fatalf("%q is not versioned", p)
