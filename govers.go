@@ -52,7 +52,7 @@ func main() {
 	}
 	var oldPackagePat *regexp.Regexp
 	if *match != "" {
-		oldPackagePat, err = regexp.Compile("^" + *match)
+		oldPackagePat, err = regexp.Compile("^(" + *match + ")")
 		if err != nil {
 			fatalf("invalid match pattern: %v", err)
 		}
@@ -199,7 +199,7 @@ func (ctxt *context) changeVersion(path string) bool {
 			changed = true
 		}
 	}
-	if !changed || !*noEdit {
+	if !changed || *noEdit {
 		return changed
 	}
 	out, err := os.Create(path)
