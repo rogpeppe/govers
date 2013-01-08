@@ -1,15 +1,30 @@
 /*
-The govers command edits all packages below the current directory to
-use the given package path prefix.  As with gofmt and gofix, there is
+The govers command searches all Go packages under the current
+directory for imports with a prefix matching a particular pattern, and
+changes them to another specified prefix. As with gofmt and gofix, there is
 no backup - you are expected to be using a version control system.
+It prints the names of any packages that are modified.
 
-A versioned package path is defined to be any path containing an
-element that matches the regular expression "v[0-9.]+".
+By default, the pattern is derived from the specified prefix
+and matches any prefix that is the same in all but version.
+A version is defined to be an element within a package
+path that matches the regular expression "v[0-9.]+".
 
-Any import that has the given prefix will be changed.
+The govers command will also check (unless the -d flag is given)
+that no dependencies would be changed if the same govers command
+was run on them. If they would, govers will fail and do nothing.
 
-The govers command will also check that all dependencies use the same
-version; if they do not, it will fail and do nothing.
+For example, say a new version of the mgo package is released.
+The old import path was labix.org/v2/mgo, and we want
+to use the new verson, labix.org/v3. In the root of the
+source tree we want to change, we run:
+
+	govers labix.org/v3
+
+This will change all labix.org/v? imports to use v3.
+It will also check that all external packages that we're
+using are also using v3, making sure that our program
+is consistently using the same version throughout.
 */
 package main
 
@@ -31,13 +46,13 @@ import (
 
 var (
 	match          = flag.String("m", "", "change imports with a matching prefix")
-	noEdit         = flag.Bool("n", false, "don't make any changes; just perform checks")
+	noEdit         = flag.Bool("n", false, "don't make any changes; perform checks only")
 	noDependencies = flag.Bool("d", false, "suppress dependency checking")
 )
 
 func main() {
 	flag.Usage = func() {
-		fmt.Fprintf(os.Stderr, "usage: govers new-package-path\n")
+		fmt.Fprintf(os.Stderr, "usage: govers new-package-prefix\n")
 		flag.PrintDefaults()
 		os.Exit(2)
 	}
