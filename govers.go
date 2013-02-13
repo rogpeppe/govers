@@ -5,14 +5,28 @@ changes them to another specified prefix. As with gofmt and gofix, there is
 no backup - you are expected to be using a version control system.
 It prints the names of any packages that are modified.
 
-By default, the pattern is derived from the specified prefix
-and matches any prefix that is the same in all but version.
-A version is defined to be an element within a package
-path that matches the regular expression "v[0-9.]+".
+Usage:
+
+	govers [-d] [-m regexp] [-n] new-package-path
+
+It accepts the following flags:
+
+	-d
+		Suppress dependency checking
+	-m regexp
+		Search for and change imports which have the
+		given pattern as a prefix (see below for the default).
+	-n
+		Don't make any changes; just perform checks.
+
+If the pattern is not specified with the -m flag, it is derived from
+new-package-path and matches any prefix that is the same in all but
+version.  A version is defined to be an element within a package path
+that matches the regular expression "v[0-9.]+".
 
 The govers command will also check (unless the -d flag is given)
-that no dependencies would be changed if the same govers command
-was run on them. If they would, govers will fail and do nothing.
+that no (recursive) dependencies would be changed if the same govers
+command was run on them. If they would, govers will fail and do nothing.
 
 For example, say a new version of the mgo package is released.
 The old import path was labix.org/v2/mgo, and we want
