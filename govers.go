@@ -188,10 +188,14 @@ func (ctxt *context) checkPackage(path string) {
 		return
 	}
 	ep := ctxt.editPkgs[path]
-	for _, impPath := range pkg.Imports {
+	// N.B. is it worth eliminating duplicates here?
+	var allImports []string
+	allImports = append(allImports, pkg.Imports...)
+	allImports = append(allImports, pkg.TestImports...)
+	allImports = append(allImports, pkg.XTestImports...)
+	for _, impPath := range allImports {
 		if p := ctxt.fixPath(impPath); p != impPath {
 			if ep == nil {
-				logf("%q uses %q", path, impPath)
 				ctxt.failed = true
 				continue
 			}
