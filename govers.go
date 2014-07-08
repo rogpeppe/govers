@@ -28,7 +28,7 @@ The govers command will also check (unless the -d flag is given)
 that no (recursive) dependencies would be changed if the same govers
 command was run on them. If they would, govers will fail and do nothing.
 
-For example, say a new version of the mgo package is released.
+For example, say a new version of the tomb package is released.
 The old import path was gopkg.in/tomb.v2, and we want
 to use the new verson, gopkg.in/tomb.v3. In the root of the
 source tree we want to change, we run:
@@ -88,7 +88,7 @@ The govers command will also check (unless the -d flag is given)
 that no (recursive) dependencies would be changed if the same govers
 command was run on them. If they would, govers will fail and do nothing.
 
-For example, say a new version of the mgo package is released.
+For example, say a new version of the tomb package is released.
 The old import path was gopkg.in/tomb.v2, and we want
 to use the new verson, gopkg.in/tomb.v3. In the root of the
 source tree we want to change, we run:
