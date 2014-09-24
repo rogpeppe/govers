@@ -233,8 +233,12 @@ func (ctxt *context) checkPackage(path string) {
 	// N.B. is it worth eliminating duplicates here?
 	var allImports []string
 	allImports = append(allImports, pkg.Imports...)
-	allImports = append(allImports, pkg.TestImports...)
-	allImports = append(allImports, pkg.XTestImports...)
+	if ctxt.editPkgs[path] != nil {
+		// The package is in our set of root packages so
+		// add testing imports too.
+		allImports = append(allImports, pkg.TestImports...)
+		allImports = append(allImports, pkg.XTestImports...)
+	}
 	for _, impPath := range allImports {
 		if p := ctxt.fixPath(impPath); p != impPath {
 			if ep == nil {
