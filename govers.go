@@ -82,7 +82,7 @@ It accepts the following flags:
 If the pattern is not specified with the -m flag, it is derived from
 new-package-path and matches any prefix that is the same in all but
 version.  A version is defined to be an element within a package path
-that matches the regular expression "(/|\.)v[0-9.]+".
+that matches the regular expression "(/|\.)v[0-9.]+(-unstable)?".
 
 The govers command will also check (unless the -d flag is given)
 that no (recursive) dependencies would be changed if the same govers
@@ -309,7 +309,7 @@ func (ctxt *context) fixPath(p string) string {
 	return p
 }
 
-const versPat = `[/|\.]v[0-9]+`
+const versPat = `[/|\.]v[0-9]+(-unstable)?`
 
 // pathVersionPat returns a pattern that will match any
 // package path that's the same except possibly
