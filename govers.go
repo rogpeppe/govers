@@ -39,6 +39,9 @@ This will change all gopkg.in/tomb.v2 imports to use v3.
 It will also check that all external packages that we're
 using are also using v3, making sure that our program
 is consistently using the same version throughout.
+
+BUG: Vendored imports are not dealt with correctly - they won't
+be changed. It's not yet clear how this command should work then.
 */
 package main
 
@@ -107,6 +110,8 @@ var (
 	noDependencies = flag.Bool("d", false, "suppress dependency checking")
 )
 
+var cwd, _ = os.Getwd()
+
 func main() {
 	flag.Usage = func() {
 		fmt.Printf("%s", help[1:])
@@ -146,7 +151,7 @@ func main() {
 	}
 	ctxt.walkDir(cwd)
 	for path := range ctxt.editPkgs {
-		ctxt.checkPackage(path)
+		ctxt.checkPackage(path, cwd)
 	}
 	if ctxt.failed {
 		os.Exit(1)
@@ -213,7 +218,7 @@ func (ctxt *context) walkDir(path string) {
 
 // checkPackage checks all go files in the given
 // package, and all their dependencies.
-func (ctxt *context) checkPackage(path string) {
+func (ctxt *context) checkPackage(path, fromDir string) {
 	if path == "C" {
 		return
 	}
@@ -221,11 +226,11 @@ func (ctxt *context) checkPackage(path string) {
 		// The package has already been, is or being, checked
 		return
 	}
-	pkg, err := ctxt.buildCtxt.Import(path, ".", 0)
+	pkg, err := ctxt.buildCtxt.Import(path, fromDir, 0)
 	ctxt.checked[pkg.ImportPath] = true
 	if err != nil {
 		if _, ok := err.(*build.NoGoError); !ok {
-			logf("cannot import %q: %v", path, err)
+			logf("cannot import %q from %q: %v", path, fromDir, err)
 		}
 		return
 	}
@@ -240,9 +245,16 @@ func (ctxt *context) checkPackage(path string) {
 		allImports = append(allImports, pkg.XTestImports...)
 	}
 	for _, impPath := range allImports {
-		if p := ctxt.fixPath(impPath); p != impPath {
+		// Import the package to find out its absolute path
+		// including vendor directories before applying the
+		// rewrite.
+		impPkg, _ := ctxt.buildCtxt.Import(impPath, pkg.Dir, 0)
+		if err != nil {
+			continue
+		}
+		if p := ctxt.fixPath(impPkg.ImportPath); p != impPkg.ImportPath {
 			if ep == nil {
-				logf("package %q is using inconsistent path %q", path, impPath)
+				logf("package %q is using inconsistent path %q", pkg.ImportPath, impPkg.ImportPath)
 				ctxt.failed = true
 				continue
 			}
@@ -250,7 +262,7 @@ func (ctxt *context) checkPackage(path string) {
 			impPath = p
 		}
 		if !*noDependencies {
-			ctxt.checkPackage(impPath)
+			ctxt.checkPackage(impPath, impPkg.Dir)
 		}
 	}
 }
