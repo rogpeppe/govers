@@ -70,7 +70,7 @@ It prints the names of any packages that are modified.
 
 Usage:
 
-	govers [-d] [-m regexp] [-n] new-package-path
+	govers [-d] [-m regexp] [tag tag_name] [-n] new-package-path
 
 It accepts the following flags:
 
@@ -81,6 +81,9 @@ It accepts the following flags:
 		given pattern as a prefix (see below for the default).
 	-n
 		Don't make any changes; just perform checks.
+	-tag tag_name
+		Use tag_name as a build tag that can have its packages
+		rewritten.
 
 If the pattern is not specified with the -m flag, it is derived from
 new-package-path and matches any prefix that is the same in all but
@@ -108,6 +111,7 @@ var (
 	match          = flag.String("m", "", "change imports with a matching prefix")
 	noEdit         = flag.Bool("n", false, "don't make any changes; perform checks only")
 	noDependencies = flag.Bool("d", false, "suppress dependency checking")
+	tag            = flag.String("tag", "", "specify a build flag to rewrite paths for (default no build flags)")
 )
 
 var cwd, _ = os.Getwd()
@@ -140,7 +144,8 @@ func main() {
 	// if we don't set this flag, but if we do set it, the import fails.
 	// The solution is to avoid using build.Import but it's convenient
 	// at the moment.
-	//	buildCtxt.UseAllFiles = true
+	// buildCtxt.UseAllFiles = true
+	buildCtxt.BuildTags = []string{*tag}
 	ctxt := &context{
 		cwd:           cwd,
 		newPackage:    newPackage,
