@@ -59,6 +59,8 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+
+	"golang.org/x/tools/go/buildutil"
 )
 
 const help = `
@@ -81,8 +83,8 @@ It accepts the following flags:
 		given pattern as a prefix (see below for the default).
 	-n
 		Don't make any changes; just perform checks.
-	-tag tag_name
-		Use tag_name as a build tag that can have its packages
+	-tags "tag_name1 tag_name2"
+		Use tag_name[1|2] as a build tag that can have its packages
 		rewritten.
 
 If the pattern is not specified with the -m flag, it is derived from
@@ -111,10 +113,13 @@ var (
 	match          = flag.String("m", "", "change imports with a matching prefix")
 	noEdit         = flag.Bool("n", false, "don't make any changes; perform checks only")
 	noDependencies = flag.Bool("d", false, "suppress dependency checking")
-	tag            = flag.String("tag", "", "specify a build flag to rewrite paths for (default no build flags)")
 )
 
 var cwd, _ = os.Getwd()
+
+func init() {
+	flag.Var((*buildutil.TagsFlag)(&build.Default.BuildTags), "tags", buildutil.TagsFlagDoc)
+}
 
 func main() {
 	flag.Usage = func() {
@@ -145,7 +150,6 @@ func main() {
 	// The solution is to avoid using build.Import but it's convenient
 	// at the moment.
 	// buildCtxt.UseAllFiles = true
-	buildCtxt.BuildTags = []string{*tag}
 	ctxt := &context{
 		cwd:           cwd,
 		newPackage:    newPackage,

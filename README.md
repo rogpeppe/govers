@@ -17,8 +17,8 @@ It accepts the following flags:
 		given pattern as a prefix (see below for the default).
 	-n
 		Don't make any changes; just perform checks.
-	-tag tag_name
-		Use tag_name as a build tag that can have its packages
+	-tags "tag_name1 tag_name2"
+		Use tag_name[1|2] as a set of build tags that can have its packages
 		rewritten.
 
 If the pattern is not specified with the -m flag, it is derived from
