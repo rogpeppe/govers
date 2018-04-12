@@ -17,9 +17,9 @@ It accepts the following flags:
 		given pattern as a prefix (see below for the default).
 	-n
 		Don't make any changes; just perform checks.
-	-tags "tag_name1 tag_name2"
-		Use tag_name[1|2] as a set of build tags that can have its packages
-		rewritten.
+	-tags 'tag list'
+		A space-separated list of build tags to satisfy when considering
+		files to change.
 
 If the pattern is not specified with the -m flag, it is derived from
 new-package-path and matches any prefix that is the same in all but

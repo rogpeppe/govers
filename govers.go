@@ -18,6 +18,9 @@ It accepts the following flags:
 		given pattern as a prefix (see below for the default).
 	-n
 		Don't make any changes; just perform checks.
+	-tags 'tag list'
+		A space-separated list of build tags to satisfy when considering
+		files to change.
 
 If the pattern is not specified with the -m flag, it is derived from
 new-package-path and matches any prefix that is the same in all but
@@ -59,8 +62,6 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
-
-	"golang.org/x/tools/go/buildutil"
 )
 
 const help = `
@@ -83,9 +84,9 @@ It accepts the following flags:
 		given pattern as a prefix (see below for the default).
 	-n
 		Don't make any changes; just perform checks.
-	-tags "tag_name1 tag_name2"
-		Use tag_name[1|2] as a build tag that can have its packages
-		rewritten.
+	-tags 'tag list'
+		A space-separated list of build tags to satisfy when considering
+		files to change.
 
 If the pattern is not specified with the -m flag, it is derived from
 new-package-path and matches any prefix that is the same in all but
@@ -118,7 +119,7 @@ var (
 var cwd, _ = os.Getwd()
 
 func init() {
-	flag.Var((*buildutil.TagsFlag)(&build.Default.BuildTags), "tags", buildutil.TagsFlagDoc)
+	flag.Var((*tagsFlag)(&build.Default.BuildTags), "tags", "a space-separated list of build tags to satisfy when considering files to change")
 }
 
 func main() {
