@@ -18,6 +18,9 @@ It accepts the following flags:
 		given pattern as a prefix (see below for the default).
 	-n
 		Don't make any changes; just perform checks.
+	-tags 'tag list'
+		A space-separated list of build tags to satisfy when considering
+		files to change.
 
 If the pattern is not specified with the -m flag, it is derived from
 new-package-path and matches any prefix that is the same in all but
@@ -70,7 +73,7 @@ It prints the names of any packages that are modified.
 
 Usage:
 
-	govers [-d] [-m regexp] [-n] new-package-path
+	govers [-d] [-m regexp] [tag tag_name] [-n] new-package-path
 
 It accepts the following flags:
 
@@ -81,6 +84,9 @@ It accepts the following flags:
 		given pattern as a prefix (see below for the default).
 	-n
 		Don't make any changes; just perform checks.
+	-tags 'tag list'
+		A space-separated list of build tags to satisfy when considering
+		files to change.
 
 If the pattern is not specified with the -m flag, it is derived from
 new-package-path and matches any prefix that is the same in all but
@@ -112,6 +118,10 @@ var (
 
 var cwd, _ = os.Getwd()
 
+func init() {
+	flag.Var((*TagsFlag)(&build.Default.BuildTags), "tags", "a space-separated list of build tags to satisfy when considering files to change")
+}
+
 func main() {
 	flag.Usage = func() {
 		fmt.Printf("%s", help[1:])
@@ -140,7 +150,7 @@ func main() {
 	// if we don't set this flag, but if we do set it, the import fails.
 	// The solution is to avoid using build.Import but it's convenient
 	// at the moment.
-	//	buildCtxt.UseAllFiles = true
+	// buildCtxt.UseAllFiles = true
 	ctxt := &context{
 		cwd:           cwd,
 		newPackage:    newPackage,
