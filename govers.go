@@ -119,7 +119,7 @@ var (
 var cwd, _ = os.Getwd()
 
 func init() {
-	flag.Var((*tagsFlag)(&build.Default.BuildTags), "tags", "a space-separated list of build tags to satisfy when considering files to change")
+	flag.Var((*TagsFlag)(&build.Default.BuildTags), "tags", "a space-separated list of build tags to satisfy when considering files to change")
 }
 
 func main() {
