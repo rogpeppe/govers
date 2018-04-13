@@ -4,9 +4,9 @@ package main
 
 import "fmt"
 
-type tagsFlag []string
+type TagsFlag []string
 
-func (v *tagsFlag) Set(s string) error {
+func (v *TagsFlag) Set(s string) error {
 	var err error
 	*v, err = splitQuotedFields(s)
 	if *v == nil {
@@ -15,7 +15,7 @@ func (v *tagsFlag) Set(s string) error {
 	return err
 }
 
-func (v *tagsFlag) Get() interface{} { return *v }
+func (v *TagsFlag) Get() interface{} { return *v }
 
 func splitQuotedFields(s string) ([]string, error) {
 	// Split fields allowing '' or "" around elements.
@@ -53,7 +53,7 @@ func splitQuotedFields(s string) ([]string, error) {
 	return f, nil
 }
 
-func (v *tagsFlag) String() string {
+func (v *TagsFlag) String() string {
 	return "<tagsFlag>"
 }
 
